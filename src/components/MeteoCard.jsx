@@ -1,38 +1,30 @@
 import { useEffect, useState } from "react";
+import { fetchData } from "../api";
+import AddCity from "./AddCity";
 
 export default function Meteocard() {
   const [weatherData, setWeatherData] = useState([]);
-
+  const [cities, setCities] = useState([
+    "Paris",
+    "Marseille",
+    "Lyon",
+    "Toulouse",
+    "Bordeaux",
+    "Nantes",
+  ]);
   const apiKey = import.meta.env.VITE_REACT_APP_API_KEY;
-  
-  useEffect(() => {
-    const cities = [
-      'Paris', 'Marseille', 'Lyon', 'Toulouse', 'Bordeaux', 'Nantes'
-    ];
 
-    const fetchData = async (city) => {
-      const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+const handleDeleteCity = (cityToDelete) => {
+  setCities((prevCities) => prevCities.filter((city) => city !== cityToDelete));
+  setWeatherData((prevData) => prevData.filter((city) => city.city !== cityToDelete));
+}
 
-      try {
-        const response = await fetch(apiUrl);
-
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-
-        const data = await response.json();
-        return { city, data };
-      } catch (error) {
-        console.error("Erreur de requête:", error);
-      }
-    };
-
-    Promise.all(cities.map(fetchData))
-      .then((results) => {
-        setWeatherData(results.filter(Boolean)); 
-      });
-  }, []); 
-    
+useEffect(() => {
+  Promise.all(cities.map(city => fetchData(city, apiKey)))
+    .then(results => {
+      setWeatherData(results.filter(Boolean));
+    });
+}, [cities]);
 
   return (
     <>
@@ -75,35 +67,33 @@ export default function Meteocard() {
             </thead>
             <tbody>
               {weatherData.map((item) => (
-              <tr key={item.data.name} className="bg-white border-b dark:bg-gray-900 dark:border-gray-700">
-                <th
-                  scope="row"
-                  className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+                <tr
+                  key={item.city}
+                  className="bg-white border-b dark:bg-gray-900 dark:border-gray-700"
                 >
-                  {item.data.name}
-                </th>
-                <td className="px-6 py-4">{item.data.weather[0].main}</td>
-                <td className="px-6 py-4">{item.data.main.temp}°C</td>
-                <td className="px-6 py-4">{item.data.wind.speed} km/h</td>
-                <td className="px-6 py-4">
-                  <a
-                    href="#"
-                    className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                  <th
+                    scope="row"
+                    className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
                   >
-                    Supprimer
-                  </a>
-                </td>
-              </tr>
+                    {item.city}
+                  </th>
+                  <td className="px-6 py-4">{item.data.weather[0].main}</td>
+                  <td className="px-6 py-4">{item.data.main.temp}°C</td>
+                  <td className="px-6 py-4">{item.data.wind.speed} km/h</td>
+                  <td className="px-6 py-4">
+                    <a onClick={() => handleDeleteCity(item.city)}
+                      href="#"
+                      className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                    >
+                      Supprimer
+                    </a>
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <button
-          type="button"
-          className="mt-4 mx-4 text-white bg-gradient-to-br from-purple-600 to-blue-500 hover:bg-gradient-to-bl focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 font-medium rounded-lg text-sm px-5 py-2.5 text-center mr-2 mb-2"
-        >
-          Ajouter une ville
-        </button>
+        <AddCity cities={cities} setCities={setCities} fetchData={fetchData} setWeatherData={setWeatherData}  />
       </div>
     </>
   );
